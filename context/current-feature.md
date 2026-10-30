@@ -8,7 +8,7 @@ Mock data: a single source of truth for the dashboard UI until the database is i
 
 <!-- Not Started | In Progress | Completed-->
 
-In Progress
+Completed
 
 ## Goals 
 
