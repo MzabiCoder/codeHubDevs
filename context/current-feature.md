@@ -17,3 +17,5 @@
 ## History
 
 <!-- Keep this updated. Earliest to latest -->
+
+- Initial setup: Next.js 16, React 19, TypeScript and Tailwind CSS v4
