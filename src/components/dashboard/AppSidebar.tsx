@@ -21,23 +21,11 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { DEFAULT_ITEM_TYPE_STYLE, ITEM_TYPE_STYLES } from "@/lib/item-type-styles";
-import { collections, currentUser, items, itemTypes, type Collection } from "@/lib/mock-data";
+import { getRecentCollections } from "@/lib/dashboard";
+import { getItemTypeStyle } from "@/lib/item-type-styles";
+import { collections, currentUser, itemTypes, type Collection } from "@/lib/mock-data";
 
 const RECENT_COLLECTIONS_LIMIT = 5;
-
-function getLastUsedAt(collectionId: string): number {
-  return items
-    .filter((item) => item.collectionIds.includes(collectionId))
-    .reduce((latest, item) => Math.max(latest, Date.parse(item.lastUsedAt)), 0);
-}
-
-function getRecentCollections(): Collection[] {
-  return collections
-    .filter((collection) => !collection.isFavorite)
-    .sort((a, b) => getLastUsedAt(b.id) - getLastUsedAt(a.id))
-    .slice(0, RECENT_COLLECTIONS_LIMIT);
-}
 
 function getInitials(name: string): string {
   return name
@@ -92,8 +80,7 @@ function TypesGroup() {
           <SidebarGroupContent>
             <SidebarMenu>
               {itemTypes.map((type) => {
-                const { icon: Icon, className } =
-                  ITEM_TYPE_STYLES[type.icon] ?? DEFAULT_ITEM_TYPE_STYLE;
+                const { icon: Icon, className } = getItemTypeStyle(type.icon);
                 return (
                   <SidebarMenuItem key={type.id}>
                     <SidebarMenuButton asChild tooltip={type.name}>
@@ -118,7 +105,7 @@ function TypesGroup() {
 
 function CollectionsGroup() {
   const favorites = collections.filter((collection) => collection.isFavorite);
-  const recent = getRecentCollections();
+  const recent = getRecentCollections(RECENT_COLLECTIONS_LIMIT, { excludeFavorites: true });
 
   return (
     <Collapsible defaultOpen className="group/collapsible">
