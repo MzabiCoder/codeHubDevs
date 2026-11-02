@@ -1,0 +1,205 @@
+import Link from "next/link";
+import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarSeparator,
+} from "@/components/ui/sidebar";
+import { DEFAULT_ITEM_TYPE_STYLE, ITEM_TYPE_STYLES } from "@/lib/item-type-styles";
+import { collections, currentUser, items, itemTypes, type Collection } from "@/lib/mock-data";
+
+const RECENT_COLLECTIONS_LIMIT = 5;
+
+function getLastUsedAt(collectionId: string): number {
+  return items
+    .filter((item) => item.collectionIds.includes(collectionId))
+    .reduce((latest, item) => Math.max(latest, Date.parse(item.lastUsedAt)), 0);
+}
+
+function getRecentCollections(): Collection[] {
+  return collections
+    .filter((collection) => !collection.isFavorite)
+    .sort((a, b) => getLastUsedAt(b.id) - getLastUsedAt(a.id))
+    .slice(0, RECENT_COLLECTIONS_LIMIT);
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-2 pt-2 pb-1 text-[0.7rem] font-medium tracking-wider text-muted-foreground uppercase group-data-[collapsible=icon]:hidden">
+      {children}
+    </p>
+  );
+}
+
+function CollectionLink({ collection }: { collection: Collection }) {
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild tooltip={collection.name}>
+        <Link href={`/collections/${collection.id}`}>
+          <Folder className="text-muted-foreground" />
+          <span>{collection.name}</span>
+        </Link>
+      </SidebarMenuButton>
+      {collection.isFavorite ? (
+        <SidebarMenuBadge>
+          <Star className="size-4 fill-yellow-400 text-yellow-400" />
+        </SidebarMenuBadge>
+      ) : (
+        <SidebarMenuBadge className="text-muted-foreground">
+          {collection.itemCount}
+        </SidebarMenuBadge>
+      )}
+    </SidebarMenuItem>
+  );
+}
+
+function TypesGroup() {
+  return (
+    <Collapsible defaultOpen className="group/collapsible">
+      <SidebarGroup>
+        <SidebarGroupLabel asChild>
+          <CollapsibleTrigger>
+            Types
+            <ChevronDown className="ml-1 transition-transform group-data-[state=closed]/collapsible:-rotate-90" />
+          </CollapsibleTrigger>
+        </SidebarGroupLabel>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {itemTypes.map((type) => {
+                const { icon: Icon, className } =
+                  ITEM_TYPE_STYLES[type.icon] ?? DEFAULT_ITEM_TYPE_STYLE;
+                return (
+                  <SidebarMenuItem key={type.id}>
+                    <SidebarMenuButton asChild tooltip={type.name}>
+                      <Link href={`/items/${type.slug}`}>
+                        <Icon className={className} />
+                        <span>{type.name}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                    <SidebarMenuBadge className="text-muted-foreground">
+                      {type.itemCount}
+                    </SidebarMenuBadge>
+                  </SidebarMenuItem>
+                );
+              })}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
+
+function CollectionsGroup() {
+  const favorites = collections.filter((collection) => collection.isFavorite);
+  const recent = getRecentCollections();
+
+  return (
+    <Collapsible defaultOpen className="group/collapsible">
+      <SidebarGroup>
+        <SidebarGroupLabel asChild>
+          <CollapsibleTrigger>
+            Collections
+            <ChevronDown className="ml-1 transition-transform group-data-[state=closed]/collapsible:-rotate-90" />
+          </CollapsibleTrigger>
+        </SidebarGroupLabel>
+        <CollapsibleContent>
+          <SidebarGroupContent>
+            <SectionLabel>Favorites</SectionLabel>
+            <SidebarMenu>
+              {favorites.map((collection) => (
+                <CollectionLink key={collection.id} collection={collection} />
+              ))}
+            </SidebarMenu>
+            <SectionLabel>Recent</SectionLabel>
+            <SidebarMenu>
+              {recent.map((collection) => (
+                <CollectionLink key={collection.id} collection={collection} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </CollapsibleContent>
+      </SidebarGroup>
+    </Collapsible>
+  );
+}
+
+function UserArea() {
+  return (
+    <SidebarMenu>
+      <SidebarMenuItem className="flex items-center gap-1">
+        <SidebarMenuButton size="lg" tooltip={currentUser.name}>
+          <Avatar className="size-8">
+            {currentUser.image && (
+              <AvatarImage src={currentUser.image} alt={currentUser.name} />
+            )}
+            <AvatarFallback>{getInitials(currentUser.name)}</AvatarFallback>
+          </Avatar>
+          <div className="grid flex-1 text-left leading-tight">
+            <span className="truncate font-medium">{currentUser.name}</span>
+            <span className="truncate text-xs text-muted-foreground">
+              {currentUser.email}
+            </span>
+          </div>
+        </SidebarMenuButton>
+        <SidebarMenuButton
+          aria-label="Settings"
+          className="size-8 shrink-0 justify-center group-data-[collapsible=icon]:hidden"
+        >
+          <Settings className="text-muted-foreground" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    </SidebarMenu>
+  );
+}
+
+export function AppSidebar() {
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="h-14 justify-center border-b">
+        <Link href="/dashboard" className="flex items-center gap-2 px-1">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-linear-to-br from-indigo-500 to-violet-600 text-white">
+            <Layers className="size-4" />
+          </span>
+          <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">
+            DevStash
+          </span>
+        </Link>
+      </SidebarHeader>
+      <SidebarContent>
+        <TypesGroup />
+        <SidebarSeparator className="mx-0" />
+        <CollectionsGroup />
+      </SidebarContent>
+      <SidebarFooter className="border-t">
+        <UserArea />
+      </SidebarFooter>
+    </Sidebar>
+  );
+}
