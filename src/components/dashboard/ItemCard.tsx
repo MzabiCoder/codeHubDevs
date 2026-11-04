@@ -2,9 +2,8 @@ import { Pin, Star } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { getItemType } from "@/lib/dashboard";
+import type { ItemSummary } from "@/lib/db/items";
 import { getItemTypeStyle } from "@/lib/item-type-styles";
-import type { Item } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
@@ -14,11 +13,11 @@ const DATE_FORMAT = new Intl.DateTimeFormat("en-US", {
 });
 
 interface ItemCardProps {
-  item: Item;
+  item: ItemSummary;
 }
 
 export function ItemCard({ item }: ItemCardProps) {
-  const style = getItemTypeStyle(getItemType(item.itemTypeId)?.icon);
+  const style = getItemTypeStyle(item.itemType.icon);
   const Icon = style.icon;
 
   return (
@@ -29,7 +28,7 @@ export function ItemCard({ item }: ItemCardProps) {
           style.bgClassName,
         )}
       >
-        <Icon className={cn("size-5", style.className)} />
+        <Icon className={cn("size-5", style.className)} aria-label={item.itemType.name} />
       </span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -56,10 +55,10 @@ export function ItemCard({ item }: ItemCardProps) {
         )}
       </div>
       <time
-        dateTime={item.lastUsedAt}
+        dateTime={item.lastUsedAt.toISOString()}
         className="shrink-0 text-xs text-muted-foreground"
       >
-        {DATE_FORMAT.format(new Date(item.lastUsedAt))}
+        {DATE_FORMAT.format(item.lastUsedAt)}
       </time>
     </Card>
   );

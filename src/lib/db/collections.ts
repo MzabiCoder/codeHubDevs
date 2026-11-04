@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 // No auth yet, so the dashboard shows the seeded demo user's data
-const DEMO_USER_EMAIL = "demo@devstash.io";
+export const DEMO_USER_EMAIL = "demo@devstash.io";
 
 export interface CollectionItemType {
   id: string;
