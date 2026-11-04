@@ -1,21 +1,22 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { Clock, Pin } from "lucide-react";
 
 import { CollectionCard } from "@/components/dashboard/CollectionCard";
 import { ItemCard } from "@/components/dashboard/ItemCard";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import {
-  getDashboardStats,
-  getPinnedItems,
-  getRecentCollections,
-  getRecentItems,
-} from "@/lib/dashboard";
+import { getItemStats, getPinnedItems, getRecentItems } from "@/lib/dashboard";
+import { getCollectionStats, getRecentCollections } from "@/lib/db/collections";
 
 const RECENT_COLLECTIONS_LIMIT = 6;
 const RECENT_ITEMS_LIMIT = 10;
 
-export default function DashboardPage() {
-  const recentCollections = getRecentCollections(RECENT_COLLECTIONS_LIMIT);
+export default async function DashboardPage() {
+  await connection();
+  const [recentCollections, collectionStats] = await Promise.all([
+    getRecentCollections(RECENT_COLLECTIONS_LIMIT),
+    getCollectionStats(),
+  ]);
   const pinnedItems = getPinnedItems();
   const recentItems = getRecentItems(RECENT_ITEMS_LIMIT);
 
@@ -26,7 +27,7 @@ export default function DashboardPage() {
         <p className="mt-1 text-muted-foreground">Your developer knowledge hub</p>
       </div>
 
-      <StatsCards stats={getDashboardStats()} />
+      <StatsCards stats={{ ...getItemStats(), ...collectionStats }} />
 
       <section>
         <div className="mb-4 flex items-center justify-between">

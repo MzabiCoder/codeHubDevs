@@ -2,17 +2,16 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
-import { getItemType } from "@/lib/dashboard";
+import type { CollectionSummary } from "@/lib/db/collections";
 import { getItemTypeStyle } from "@/lib/item-type-styles";
-import type { Collection } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 interface CollectionCardProps {
-  collection: Collection;
+  collection: CollectionSummary;
 }
 
 export function CollectionCard({ collection }: CollectionCardProps) {
-  const accent = getItemTypeStyle(getItemType(collection.itemTypeIds[0])?.icon);
+  const accent = getItemTypeStyle(collection.itemTypes[0]?.icon);
 
   return (
     <Link href={`/collections/${collection.id}`} className="rounded-xl">
@@ -35,11 +34,10 @@ export function CollectionCard({ collection }: CollectionCardProps) {
           {collection.description}
         </p>
         <div className="mt-3 flex gap-2">
-          {collection.itemTypeIds.map((typeId) => {
-            const type = getItemType(typeId);
-            const { icon: Icon, className } = getItemTypeStyle(type?.icon);
+          {collection.itemTypes.map((type) => {
+            const { icon: Icon, className } = getItemTypeStyle(type.icon);
             return (
-              <Icon key={typeId} className={cn("size-4", className)} aria-label={type?.name} />
+              <Icon key={type.id} className={cn("size-4", className)} aria-label={type.name} />
             );
           })}
         </div>

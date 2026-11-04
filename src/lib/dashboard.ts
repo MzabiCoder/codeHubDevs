@@ -46,11 +46,9 @@ export function getRecentItems(limit: number): Item[] {
   return [...items].sort(byLastUsedDesc).slice(0, limit);
 }
 
-export function getDashboardStats(): DashboardStats {
+export function getItemStats(): Pick<DashboardStats, "items" | "favoriteItems"> {
   return {
     items: items.length,
-    collections: collections.length,
     favoriteItems: items.filter((item) => item.isFavorite).length,
-    favoriteCollections: collections.filter((collection) => collection.isFavorite).length,
   };
 }
