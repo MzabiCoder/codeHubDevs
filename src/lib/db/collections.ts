@@ -1,3 +1,4 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 // No auth yet, so the dashboard shows the seeded demo user's data
@@ -46,20 +47,37 @@ function toCollectionSummary({ items, ...collection }: CollectionWithItemTypes):
   return { ...collection, itemCount: items.length, itemTypes: rankItemTypes(items) };
 }
 
-export async function getRecentCollections(limit: number): Promise<CollectionSummary[]> {
+const COLLECTION_SUMMARY_SELECT = {
+  id: true,
+  name: true,
+  description: true,
+  isFavorite: true,
+  items: {
+    select: { item: { select: { itemType: { select: { id: true, name: true, icon: true } } } } },
+  },
+} satisfies Prisma.CollectionSelect;
+
+export async function getRecentCollections(
+  limit: number,
+  { excludeFavorites = false } = {},
+): Promise<CollectionSummary[]> {
   const collections = await prisma.collection.findMany({
-    where: { user: { email: DEMO_USER_EMAIL } },
+    where: {
+      user: { email: DEMO_USER_EMAIL },
+      ...(excludeFavorites && { isFavorite: false }),
+    },
     orderBy: { updatedAt: "desc" },
     take: limit,
-    select: {
-      id: true,
-      name: true,
-      description: true,
-      isFavorite: true,
-      items: {
-        select: { item: { select: { itemType: { select: { id: true, name: true, icon: true } } } } },
-      },
-    },
+    select: COLLECTION_SUMMARY_SELECT,
+  });
+  return collections.map(toCollectionSummary);
+}
+
+export async function getFavoriteCollections(): Promise<CollectionSummary[]> {
+  const collections = await prisma.collection.findMany({
+    where: { user: { email: DEMO_USER_EMAIL }, isFavorite: true },
+    orderBy: { name: "asc" },
+    select: COLLECTION_SUMMARY_SELECT,
   });
   return collections.map(toCollectionSummary);
 }

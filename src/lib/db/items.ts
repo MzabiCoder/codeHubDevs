@@ -14,6 +14,14 @@ export interface ItemSummary {
   tags: string[];
 }
 
+export interface SidebarItemType {
+  id: string;
+  name: string;
+  slug: string;
+  icon: string;
+  itemCount: number;
+}
+
 export interface ItemStats {
   items: number;
   favoriteItems: number;
@@ -68,4 +76,34 @@ export async function getItemStats(): Promise<ItemStats> {
     prisma.item.count({ where: { ...where, isFavorite: true } }),
   ]);
   return { items, favoriteItems };
+}
+
+const SYSTEM_TYPE_ORDER = ["snippets", "prompts", "commands", "notes", "files", "images", "links"];
+
+function systemTypeRank(slug: string): number {
+  const index = SYSTEM_TYPE_ORDER.indexOf(slug);
+  return index === -1 ? SYSTEM_TYPE_ORDER.length : index;
+}
+
+function toDisplayName(slug: string): string {
+  return slug.charAt(0).toUpperCase() + slug.slice(1);
+}
+
+export async function getSystemItemTypes(): Promise<SidebarItemType[]> {
+  const types = await prisma.itemType.findMany({
+    where: { isSystem: true },
+    select: {
+      id: true,
+      slug: true,
+      icon: true,
+      _count: { select: { items: { where: { user: { email: DEMO_USER_EMAIL } } } } },
+    },
+  });
+  return types
+    .sort((a, b) => systemTypeRank(a.slug) - systemTypeRank(b.slug))
+    .map(({ _count, ...type }) => ({
+      ...type,
+      name: toDisplayName(type.slug),
+      itemCount: _count.items,
+    }));
 }

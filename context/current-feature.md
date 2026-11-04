@@ -1,6 +1,6 @@
 #  Current Feature
 
-Dashboard Items: replace the mock pinned and recent items in the dashboard main area with real data from the Neon database via Prisma. Full spec in `context/features/dashboard-items-spec.md`.
+Stats & Sidebar: show the main area stats and the sidebar item types and collections from the Neon database via Prisma instead of `src/lib/mock-data.ts`. Full spec in `context/features/stats-sidebar-spec.md`.
 
 ## Status 
 
@@ -8,16 +8,15 @@ Completed
 
 ## Goals 
 
-- Create `src/lib/db/items.ts` with the data fetching functions
-- Fetch items directly in the server component instead of using `src/lib/mock-data.ts`
-- Keep the current design for pinned and recent items (see `context/screenshots/dashboard-ui-main.png`)
-- Derive each item card's icon and border from its item type
-- Display item type tags and everything else currently shown on the cards
-- Update the collection stats display to use real data
+- Display stats from database data, keeping the current design/layout
+- Display system item types in the sidebar with their icons, linking to `/items/[typename]`
+- Add a "View all collections" link under the collections list that goes to `/collections`
+- Keep the star icons for favorite collections; for recent collections, show a colored circle based on the most-used item type in each collection
+- Add the database functions to `src/lib/db/items.ts` (use `src/lib/db/collections.ts` for reference)
 
 ## Notes 
 
-- If there are no pinned items, the pinned section should not display at all
+- Reference: `src/lib/db/collections.ts`
 
 ## History
 
@@ -30,3 +29,4 @@ Completed
 - Seed Data: `prisma/seed.ts` (run with `npm run db:seed`) with the demo user, 7 system item types, 5 collections and 18 items, safe to re-run; `scripts/test-db.ts` now displays the demo data
 - Dashboard Collections: recent collections and collection stats on the dashboard come from the database via `src/lib/db/collections.ts` (demo user until auth), with card border color from the most-used item type, type icons per collection, and a `loading.tsx` skeleton for the request-time render
 - Dashboard Items: pinned items, the 10 most recent items and item stats on the dashboard come from the database via `src/lib/db/items.ts` (demo user until auth), with card icon and border from the item type, tags as badges, and the pinned section hidden when empty
+- Stats & Sidebar: sidebar item types (fixed order, icons, per-type counts, links to /items/[slug]) and favorite/recent collections come from the database via `src/lib/db/items.ts` and `src/lib/db/collections.ts`, with a colored circle per recent collection from its most-used item type, a "View all collections" link, and skeleton fallbacks while the sidebar streams

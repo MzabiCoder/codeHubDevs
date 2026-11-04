@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import Link from "next/link";
-import { ChevronDown, Folder, Layers, Settings, Star } from "lucide-react";
+import { connection } from "next/server";
+import { ChevronDown, Circle, Folder, Layers, Settings, Star } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,9 +23,16 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
-import { getRecentCollections } from "@/lib/dashboard";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  type CollectionSummary,
+  getFavoriteCollections,
+  getRecentCollections,
+} from "@/lib/db/collections";
+import { getSystemItemTypes } from "@/lib/db/items";
 import { getItemTypeStyle } from "@/lib/item-type-styles";
-import { collections, currentUser, itemTypes, type Collection } from "@/lib/mock-data";
+import { currentUser } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
 
 const RECENT_COLLECTIONS_LIMIT = 5;
 
@@ -44,12 +53,31 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CollectionLink({ collection }: { collection: Collection }) {
+function MenuSkeleton({ count }: { count: number }) {
+  return (
+    <SidebarMenu>
+      {Array.from({ length: count }, (_, i) => (
+        <SidebarMenuItem key={i} className="flex h-8 items-center gap-2 px-2">
+          <Skeleton className="size-4 rounded-md" />
+          <Skeleton className="h-4 flex-1 group-data-[collapsible=icon]:hidden" />
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
+  );
+}
+
+function CollectionLink({ collection }: { collection: CollectionSummary }) {
+  const accent = getItemTypeStyle(collection.itemTypes[0]?.icon);
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild tooltip={collection.name}>
         <Link href={`/collections/${collection.id}`}>
-          <Folder className="text-muted-foreground" />
+          {collection.isFavorite ? (
+            <Folder className="text-muted-foreground" />
+          ) : (
+            <Circle className={cn("fill-current", accent.className)} />
+          )}
           <span>{collection.name}</span>
         </Link>
       </SidebarMenuButton>
@@ -66,6 +94,57 @@ function CollectionLink({ collection }: { collection: Collection }) {
   );
 }
 
+async function TypesMenu() {
+  await connection();
+  const itemTypes = await getSystemItemTypes();
+
+  return (
+    <SidebarMenu>
+      {itemTypes.map((type) => {
+        const { icon: Icon, className } = getItemTypeStyle(type.icon);
+        return (
+          <SidebarMenuItem key={type.id}>
+            <SidebarMenuButton asChild tooltip={type.name}>
+              <Link href={`/items/${type.slug}`}>
+                <Icon className={className} />
+                <span>{type.name}</span>
+              </Link>
+            </SidebarMenuButton>
+            <SidebarMenuBadge className="text-muted-foreground">
+              {type.itemCount}
+            </SidebarMenuBadge>
+          </SidebarMenuItem>
+        );
+      })}
+    </SidebarMenu>
+  );
+}
+
+async function CollectionsMenu() {
+  await connection();
+  const [favorites, recent] = await Promise.all([
+    getFavoriteCollections(),
+    getRecentCollections(RECENT_COLLECTIONS_LIMIT, { excludeFavorites: true }),
+  ]);
+
+  return (
+    <>
+      <SectionLabel>Favorites</SectionLabel>
+      <SidebarMenu>
+        {favorites.map((collection) => (
+          <CollectionLink key={collection.id} collection={collection} />
+        ))}
+      </SidebarMenu>
+      <SectionLabel>Recent</SectionLabel>
+      <SidebarMenu>
+        {recent.map((collection) => (
+          <CollectionLink key={collection.id} collection={collection} />
+        ))}
+      </SidebarMenu>
+    </>
+  );
+}
+
 function TypesGroup() {
   return (
     <Collapsible defaultOpen className="group/collapsible">
@@ -78,24 +157,9 @@ function TypesGroup() {
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {itemTypes.map((type) => {
-                const { icon: Icon, className } = getItemTypeStyle(type.icon);
-                return (
-                  <SidebarMenuItem key={type.id}>
-                    <SidebarMenuButton asChild tooltip={type.name}>
-                      <Link href={`/items/${type.slug}`}>
-                        <Icon className={className} />
-                        <span>{type.name}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuBadge className="text-muted-foreground">
-                      {type.itemCount}
-                    </SidebarMenuBadge>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            <Suspense fallback={<MenuSkeleton count={7} />}>
+              <TypesMenu />
+            </Suspense>
           </SidebarGroupContent>
         </CollapsibleContent>
       </SidebarGroup>
@@ -104,9 +168,6 @@ function TypesGroup() {
 }
 
 function CollectionsGroup() {
-  const favorites = collections.filter((collection) => collection.isFavorite);
-  const recent = getRecentCollections(RECENT_COLLECTIONS_LIMIT, { excludeFavorites: true });
-
   return (
     <Collapsible defaultOpen className="group/collapsible">
       <SidebarGroup>
@@ -118,17 +179,17 @@ function CollectionsGroup() {
         </SidebarGroupLabel>
         <CollapsibleContent>
           <SidebarGroupContent>
-            <SectionLabel>Favorites</SectionLabel>
+            <Suspense fallback={<MenuSkeleton count={5} />}>
+              <CollectionsMenu />
+            </Suspense>
             <SidebarMenu>
-              {favorites.map((collection) => (
-                <CollectionLink key={collection.id} collection={collection} />
-              ))}
-            </SidebarMenu>
-            <SectionLabel>Recent</SectionLabel>
-            <SidebarMenu>
-              {recent.map((collection) => (
-                <CollectionLink key={collection.id} collection={collection} />
-              ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="View all collections">
+                  <Link href="/collections" className="text-muted-foreground">
+                    <span>View all collections</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </CollapsibleContent>
