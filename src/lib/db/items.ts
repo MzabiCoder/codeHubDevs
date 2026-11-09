@@ -1,6 +1,6 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { DEMO_USER_EMAIL } from "@/lib/db/collections";
+import { DEMO_USER_EMAIL } from "@/lib/db/demo-user";
 
 export interface ItemSummary {
   id: string;
@@ -90,20 +90,24 @@ function toDisplayName(slug: string): string {
 }
 
 export async function getSystemItemTypes(): Promise<SidebarItemType[]> {
-  const types = await prisma.itemType.findMany({
-    where: { isSystem: true },
-    select: {
-      id: true,
-      slug: true,
-      icon: true,
-      _count: { select: { items: { where: { user: { email: DEMO_USER_EMAIL } } } } },
-    },
-  });
+  const [types, counts] = await Promise.all([
+    prisma.itemType.findMany({
+      where: { isSystem: true },
+      select: { id: true, slug: true, icon: true },
+    }),
+    prisma.item.groupBy({
+      by: ["itemTypeId"],
+      where: { user: { email: DEMO_USER_EMAIL } },
+      _count: { _all: true },
+    }),
+  ]);
+  const countsByType = new Map(counts.map(({ itemTypeId, _count }) => [itemTypeId, _count._all]));
+
   return types
     .sort((a, b) => systemTypeRank(a.slug) - systemTypeRank(b.slug))
-    .map(({ _count, ...type }) => ({
+    .map((type) => ({
       ...type,
       name: toDisplayName(type.slug),
-      itemCount: _count.items,
+      itemCount: countsByType.get(type.id) ?? 0,
     }));
 }

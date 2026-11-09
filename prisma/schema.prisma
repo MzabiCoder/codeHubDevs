@@ -105,6 +105,7 @@ model ItemType {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, slug])
+  @@index([isSystem])
 }
 
 model Item {
@@ -161,6 +162,7 @@ model Collection {
 
   @@index([userId, isFavorite])
   @@index([userId, updatedAt])
+  @@index([defaultTypeId])
 }
 
 model ItemCollection {
