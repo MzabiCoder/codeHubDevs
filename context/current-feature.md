@@ -1,6 +1,6 @@
 #  Current Feature
 
-Stats & Sidebar: show the main area stats and the sidebar item types and collections from the Neon database via Prisma instead of `src/lib/mock-data.ts`. Full spec in `context/features/stats-sidebar-spec.md`.
+Add a PRO badge to the Files and Images item types in the sidebar. Full spec in `context/features/add-pro-badge-side.md`.
 
 ## Status 
 
@@ -8,15 +8,15 @@ Completed
 
 ## Goals 
 
-- Display stats from database data, keeping the current design/layout
-- Display system item types in the sidebar with their icons, linking to `/items/[typename]`
-- Add a "View all collections" link under the collections list that goes to `/collections`
-- Keep the star icons for favorite collections; for recent collections, show a colored circle based on the most-used item type in each collection
-- Add the database functions to `src/lib/db/items.ts` (use `src/lib/db/collections.ts` for reference)
+- Show a "PRO" badge next to the Files and Images item types in the sidebar
+- Use the shadcn/ui `Badge` component
+- Keep the badge clean and subtle
+- Badge text is all uppercase: `PRO`
 
 ## Notes 
 
-- Reference: `src/lib/db/collections.ts`
+- Only the Files and Images types get the badge; other types stay unchanged
+- Spec: `context/features/add-pro-badge-side.md`
 
 ## History
 
@@ -30,3 +30,4 @@ Completed
 - Dashboard Collections: recent collections and collection stats on the dashboard come from the database via `src/lib/db/collections.ts` (demo user until auth), with card border color from the most-used item type, type icons per collection, and a `loading.tsx` skeleton for the request-time render
 - Dashboard Items: pinned items, the 10 most recent items and item stats on the dashboard come from the database via `src/lib/db/items.ts` (demo user until auth), with card icon and border from the item type, tags as badges, and the pinned section hidden when empty
 - Stats & Sidebar: sidebar item types (fixed order, icons, per-type counts, links to /items/[slug]) and favorite/recent collections come from the database via `src/lib/db/items.ts` and `src/lib/db/collections.ts`, with a colored circle per recent collection from its most-used item type, a "View all collections" link, and skeleton fallbacks while the sidebar streams
+- Pro Badge Sidebar: subtle outline shadcn `Badge` with uppercase "PRO" next to the Files and Images item types in the sidebar, hidden in collapsed icon mode

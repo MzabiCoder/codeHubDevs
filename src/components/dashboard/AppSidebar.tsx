@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { ChevronDown, Circle, Folder, Layers, Settings, Star } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
@@ -35,6 +36,7 @@ import { currentUser } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 const RECENT_COLLECTIONS_LIMIT = 5;
+const PRO_TYPE_SLUGS = new Set(["files", "images"]);
 
 function getInitials(name: string): string {
   return name
@@ -108,6 +110,14 @@ async function TypesMenu() {
               <Link href={`/items/${type.slug}`}>
                 <Icon className={className} />
                 <span>{type.name}</span>
+                {PRO_TYPE_SLUGS.has(type.slug) && (
+                  <Badge
+                    variant="outline"
+                    className="h-4 px-1.5 text-[0.6rem] font-semibold tracking-wider text-muted-foreground group-data-[collapsible=icon]:hidden"
+                  >
+                    PRO
+                  </Badge>
+                )}
               </Link>
             </SidebarMenuButton>
             <SidebarMenuBadge className="text-muted-foreground">
